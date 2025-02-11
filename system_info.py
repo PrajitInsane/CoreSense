@@ -40,7 +40,6 @@ def get_system_info():
     ram = get_ram_size()
 
     return f"""
-    <span font='16' weight='bold'>System Information</span>\n
     <span font='14'>OS: {os_info}</span>\n
     <span font='14'>CPU: {cpu_model}</span>\n
     <span font='14'>RAM: {ram} GB</span>\n
