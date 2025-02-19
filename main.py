@@ -259,7 +259,7 @@ class SensorApp(Gtk.Window):
         about_dialog.set_comments("A GTK-based system monitoring tool displaying CPU usage, temperature, and disk stats.")
         about_dialog.set_license_type(Gtk.License.GPL_3_0)
         about_dialog.set_logo_icon_name("computer")
-        about_dialog.set_website("https://github.com/your-repo")  # Replace with your GitHub or project link
+        about_dialog.set_website("https://github.com/PrajitInsane/CoreSense")  # Replace with your GitHub or project link
         about_dialog.set_website_label("Project Repository")
         about_dialog.set_authors(["Prajit"])
         about_dialog.set_documenters(["prajit2324@gmail.com"])
