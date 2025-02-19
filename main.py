@@ -1,5 +1,6 @@
 import gi
 import platform
+import re
 import psutil
 import subprocess
 import threading
@@ -19,8 +20,8 @@ from gi.repository import Gtk, GLib
 
 class SensorApp(Gtk.Window):
     def __init__(self):
-        super().__init__(title="System Monitor")
-        self.set_default_size(500, 1000)
+        super().__init__(title="CoreSense")
+        self.set_default_size(700, 700)
         self.set_border_width(20)
 
         # Main Grid Layout
@@ -28,6 +29,18 @@ class SensorApp(Gtk.Window):
         grid.set_row_spacing(15)
         grid.set_column_spacing(20)
         self.add(grid)
+        # Create HeaderBar
+        header_bar = Gtk.HeaderBar()
+        header_bar.set_show_close_button(True)
+        header_bar.set_title("System Monitor")
+
+        # Create About Button
+        about_button = Gtk.Button(label="About")
+        about_button.connect("clicked", self.show_about_dialog)
+        header_bar.pack_end(about_button)  # Adds to the right side
+
+        # Set the header bar as the window title bar
+        self.set_titlebar(header_bar)
 
         # System Information
         system_info = get_system_info()
@@ -54,18 +67,22 @@ class SensorApp(Gtk.Window):
 
         # CPU Average Temperature Label
         self.cpu_avg_label = Gtk.Label()
-        self.cpu_avg_label.set_markup("<span font='24' weight='bold'>CPU Avg: Loading...</span>")
+        self.cpu_avg_label.set_markup("<span font='24' weight='bold' >CPU Avg: Loading...</span>")
         vbox_cpu_temp.pack_start(self.cpu_avg_label, False, False, 5)
 
-        # CPU Temperature Graph
+       # CPU Temperature Graph
         self.fig_temp, self.ax_temp = plt.subplots()
         self.canvas_temp = FigureCanvas(self.fig_temp)
-        self.ax_temp.set_title("CPU Temperature Over Time")
-        self.ax_temp.set_ylabel("°C")
+        self.fig_temp.patch.set_facecolor('#2E2E2E')  # Dark background for the figure
+        self.ax_temp.set_facecolor('#2E2E2E')  # Dark background for the plot area
+        self.ax_temp.set_ylabel("°C", color='#FFC107')
         self.ax_temp.set_ylim(30, 100)
+        self.ax_temp.tick_params(axis='x', colors='#FFC107')
+        self.ax_temp.tick_params(axis='y', colors='#FFC107')
+        self.ax_temp.grid(True, linestyle='--', linewidth=0.5, color='gray')
         self.cpu_temp_data = deque(maxlen=100)
-        self.line_temp, = self.ax_temp.plot([], [], 'r')
-        vbox_cpu_temp.pack_start(self.canvas_temp, True, True, 5)
+        self.line_temp, = self.ax_temp.plot([], [], 'red')  # Keep red for temperature visibility
+        vbox_cpu_temp.pack_start(self.canvas_temp, True, True, 5)       
 
         # Attach the frame to the grid
         grid.attach_next_to(frame_cpu_temp, frame_sys_info, Gtk.PositionType.RIGHT, 3, 3)
@@ -99,7 +116,7 @@ class SensorApp(Gtk.Window):
         for i, (name, func) in enumerate(self.components.items()):
             # Sensor name label
             label_name = Gtk.Label()
-            label_name.set_markup(f"<span font='14'>{name}</span>")  # Increased font
+            label_name.set_markup(f"<span font='14' color='#FFC107'>{name}</span>")  # Increased font
             label_name.set_xalign(1)
             label_name.set_margin_top(10)
             label_name.set_margin_start(15)  
@@ -108,7 +125,7 @@ class SensorApp(Gtk.Window):
 
             # Sensor value label
             label_value = Gtk.Label()
-            label_value.set_markup("<span font='14'>Loading...</span>")  # Increased font
+            label_value.set_markup("<span font='14' color='#FFC107'>Loading...</span>")  # Increased font
             label_value.set_xalign(0)
             self.sensor_grid.attach(label_value, 1, i, 1, 1)
             label_value.set_margin_top(10)
@@ -129,17 +146,20 @@ class SensorApp(Gtk.Window):
         # CPU Usage Graph
         self.fig_usage, self.ax_usage = plt.subplots()
         self.canvas_usage = FigureCanvas(self.fig_usage)
-        self.ax_usage.set_title("CPU Usage Over Time")
-        self.ax_usage.set_ylabel("% Usage")
+        self.fig_usage.patch.set_facecolor('#2E2E2E')  # Dark background for figure
+        self.ax_usage.set_facecolor('#2E2E2E')  # Dark background for plot area
+        self.ax_usage.set_title("CPU Usage Over Time", color='#FFC107')
         self.ax_usage.set_ylim(0, 100)
+        self.ax_usage.tick_params(axis='x', colors='#FFC107')
+        self.ax_usage.tick_params(axis='y', colors='#FFC107')
+        self.ax_usage.grid(True, linestyle='--', linewidth=0.5, color='gray')
         self.cpu_usage_data = deque(maxlen=100)
-        self.line_usage, = self.ax_usage.plot([], [], 'b')
-
+        self.line_usage, = self.ax_usage.plot([], [], 'cyan')  # Cyan for better visibility
         # Add the canvas to the frame
         vbox_cpu_usage.pack_start(self.canvas_usage, True, True, 5)
 
         # Attach the frame to the grid
-        grid.attach(frame_cpu_usage,1,5, 20, 20)
+        grid.attach(frame_cpu_usage,1,5, 13, 20)
         # Create a frame for Fan Speed
         frame_fan = Gtk.Frame(label="Fan Speed")
         frame_fan.set_label_align(0.5, 0.5)
@@ -150,7 +170,7 @@ class SensorApp(Gtk.Window):
 
         # Fan Speed Label
         self.fan_label = Gtk.Label()
-        self.fan_label.set_markup("<span font='18' weight='bold'>Loading...</span>")
+        self.fan_label.set_markup("<span font='18' weight='bold' color='#FFC107'>Loading...</span>")
         self.fan_label.set_halign(Gtk.Align.CENTER)
         vbox_fan.pack_start(self.fan_label, True, True, 5)
 
@@ -173,12 +193,12 @@ class SensorApp(Gtk.Window):
         vbox_disk_usage.pack_start(self.canvas_disk, True, True, 5)
 
         # Attach the frame to the grid
-        grid.attach_next_to(frame_disk_usage, frame_fan, Gtk.PositionType.BOTTOM, 1, 12)
+        grid.attach_next_to(frame_disk_usage, frame_fan, Gtk.PositionType.BOTTOM, 1, 22)
 
         # Start Updates
         GLib.timeout_add(1000, self.update_sensors)
-        self.anim_temp = animation.FuncAnimation(self.fig_temp, self.update_cpu_temp_graph, interval=1000)
-        self.anim_usage = animation.FuncAnimation(self.fig_usage, self.update_cpu_usage_graph, interval=1000)
+        self.anim_temp = animation.FuncAnimation(self.fig_temp, self.update_cpu_temp_graph,cache_frame_data=False, interval=1000)
+        self.anim_usage = animation.FuncAnimation(self.fig_usage, self.update_cpu_usage_graph,cache_frame_data=False, interval=1000)
 
     def update_sensors(self):
         threading.Thread(target=self.fetch_sensor_data, daemon=True).start()
@@ -188,14 +208,31 @@ class SensorApp(Gtk.Window):
         core_temps = [float(get_core0().split()[0]), float(get_core1().split()[0]),
                       float(get_core2().split()[0]), float(get_core3().split()[0])]
         avg_cpu_temp = sum(core_temps) / len(core_temps)
-        GLib.idle_add(self.cpu_avg_label.set_markup,
-                      f"<span font='24' weight='bold'>CPU Avg: {avg_cpu_temp:.2f} °C</span>")
-        
+        temp_color = "cyan"  # Default (Yellow)
+        if avg_cpu_temp > 75:
+            temp_color = "#FF5733"  # Change to Red when above 70°C
+
+# Update the label with the selected color
+        GLib.idle_add(
+            self.cpu_avg_label.set_markup,
+            f"<span font='24' weight='bold' color='{temp_color}'>CPU Avg: {avg_cpu_temp:.2f} °C</span>"
+        )
         for name, func in self.components.items():
             new_value = func()
-            GLib.idle_add(self.labels[name].set_markup, f"<span font='14'>{new_value}</span>")
-        
-        GLib.idle_add(self.fan_label.set_markup, f"<span font='18' weight='bold'>{get_fan_speed()}</span>")
+            numeric_value = re.sub(r'[^\d.]', '', new_value)
+            value=float(numeric_value)
+            color = "cyan"
+            try:
+                if value > 75:
+                    color = "#FF5733"  # Red for values above 75
+            except ValueError:
+                pass  # If new_value is not a number, keep default color (yellow)
+            GLib.idle_add(
+                self.labels[name].set_markup,
+                f"<span font='14' color='{color}'>{new_value}</span>"
+            )
+
+        GLib.idle_add(self.fan_label.set_markup, f"<span font='18' weight='bold' color='#FFC107'>{get_fan_speed()}</span>")
     
     def update_cpu_temp_graph(self, frame):
         self.cpu_temp_data.append(float(get_core0().split()[0]))
@@ -212,6 +249,23 @@ class SensorApp(Gtk.Window):
         self.ax_usage.relim()
         self.ax_usage.autoscale_view()
         self.canvas_usage.draw()
+
+
+    def show_about_dialog(self, widget):
+        about_dialog = Gtk.AboutDialog()
+        about_dialog.set_program_name("CoreSense")
+        about_dialog.set_version("1.0")
+        about_dialog.set_copyright("© 2025 Prajit")
+        about_dialog.set_comments("A GTK-based system monitoring tool displaying CPU usage, temperature, and disk stats.")
+        about_dialog.set_license_type(Gtk.License.GPL_3_0)
+        about_dialog.set_logo_icon_name("computer")
+        about_dialog.set_website("https://github.com/your-repo")  # Replace with your GitHub or project link
+        about_dialog.set_website_label("Project Repository")
+        about_dialog.set_authors(["Prajit"])
+        about_dialog.set_documenters(["prajit2324@gmail.com"])
+        about_dialog.set_transient_for(self)
+        about_dialog.run()
+        about_dialog.destroy()
 
 win = SensorApp()
 win.connect("destroy", Gtk.main_quit)

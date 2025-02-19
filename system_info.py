@@ -40,10 +40,10 @@ def get_system_info():
     ram = get_ram_size()
 
     return f"""
-    <span font='14'>OS: {os_info}</span>\n
-    <span font='14'>CPU: {cpu_model}</span>\n
-    <span font='14'>RAM: {ram} GB</span>\n
-    <span font='14'>GPU: {gpu_model}</span>
+    <span font='14' color='#FFC107'>OS: {os_info}</span>\n
+    <span font='14' color='#FFC107'>CPU: {cpu_model}</span>\n
+    <span font='14' color='#FFC107'>RAM: {ram} GB</span>\n
+    <span font='14' color='#FFC107'>GPU: {gpu_model}</span>
     """
 
 if __name__ == "__main__":
