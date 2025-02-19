@@ -32,7 +32,7 @@ class SensorApp(Gtk.Window):
         # Create HeaderBar
         header_bar = Gtk.HeaderBar()
         header_bar.set_show_close_button(True)
-        header_bar.set_title("System Monitor")
+        header_bar.set_title("CoreSense")
 
         # Create About Button
         about_button = Gtk.Button(label="About")
